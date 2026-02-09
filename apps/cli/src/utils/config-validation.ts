@@ -75,7 +75,12 @@ export function validateDatabaseSetup(
   config: Partial<ProjectConfig>,
   providedFlags: Set<string>,
 ): ValidationResult {
-  const { dbSetup, database, runtime } = config;
+  const { dbSetup, database, runtime, backend } = config;
+
+  // PocketBase manages its own data; skip database setup validation
+  if (backend === "pocketbase") {
+    return Result.ok(undefined);
+  }
 
   if (
     providedFlags.has("dbSetup") &&
@@ -237,6 +242,63 @@ export function validateConvexConstraints(
   return Result.ok(undefined);
 }
 
+export function validatePocketBaseConstraints(
+  config: Partial<ProjectConfig>,
+  providedFlags: Set<string>,
+): ValidationResult {
+  const { backend } = config;
+
+  if (backend !== "pocketbase") {
+    return Result.ok(undefined);
+  }
+
+  const has = (k: string) => providedFlags.has(k);
+
+  if (has("runtime") && config.runtime !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--runtime none'. PocketBase is its own Go-based runtime. Please remove the --runtime flag or set it to 'none'.",
+    );
+  }
+
+  if (has("database") && config.database !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--database none'. PocketBase has an embedded SQLite database. Please remove the --database flag or set it to 'none'.",
+    );
+  }
+
+  if (has("orm") && config.orm !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--orm none'. PocketBase has its own data layer. Please remove the --orm flag or set it to 'none'.",
+    );
+  }
+
+  if (has("api") && config.api !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--api none'. PocketBase has its own REST API and realtime. Please remove the --api flag or set it to 'none'.",
+    );
+  }
+
+  if (has("dbSetup") && config.dbSetup !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--db-setup none'. PocketBase manages its own data. Please remove the --db-setup flag or set it to 'none'.",
+    );
+  }
+
+  if (has("serverDeploy") && config.serverDeploy !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--server-deploy none'. PocketHost handles deployment. Please remove the --server-deploy flag or set it to 'none'.",
+    );
+  }
+
+  if (has("auth") && config.auth !== "pocketbase-auth" && config.auth !== "none") {
+    return validationErr(
+      "PocketBase backend only supports '--auth pocketbase-auth' or '--auth none'. Please remove the --auth flag or set it to 'pocketbase-auth' or 'none'.",
+    );
+  }
+
+  return Result.ok(undefined);
+}
+
 export function validateBackendNoneConstraints(
   config: Partial<ProjectConfig>,
   providedFlags: Set<string>,
@@ -334,6 +396,12 @@ export function validateBackendConstraints(
     );
   }
 
+  if (config.auth === "pocketbase-auth" && backend !== "pocketbase") {
+    return validationErr(
+      "PocketBase Auth is only supported with the PocketBase backend. Please use '--backend pocketbase' or choose a different auth provider.",
+    );
+  }
+
   if (backend === "convex" && config.auth === "clerk" && config.frontend) {
     const incompatibleFrontends = config.frontend.filter((f) =>
       ["nuxt", "svelte", "solid"].includes(f),
@@ -351,12 +419,13 @@ export function validateBackendConstraints(
     providedFlags.has("backend") &&
     backend &&
     backend !== "convex" &&
+    backend !== "pocketbase" &&
     backend !== "none" &&
     backend !== "self"
   ) {
     if (providedFlags.has("runtime") && options.runtime === "none") {
       return validationErr(
-        "'--runtime none' is only supported with '--backend convex', '--backend none', or '--backend self'. Please choose 'bun', 'node', or remove the --runtime flag.",
+        "'--runtime none' is only supported with '--backend convex', '--backend pocketbase', '--backend none', or '--backend self'. Please choose 'bun', 'node', or remove the --runtime flag.",
       );
     }
   }
@@ -415,6 +484,7 @@ export function validateApiConstraints(
     if (
       options.examples?.includes("todo") &&
       options.backend !== "convex" &&
+      options.backend !== "pocketbase" &&
       options.backend !== "none"
     ) {
       return validationErr(
@@ -436,6 +506,7 @@ export function validateFullConfig(
     yield* validateDatabaseSetup(config, providedFlags);
 
     yield* validateConvexConstraints(config, providedFlags);
+    yield* validatePocketBaseConstraints(config, providedFlags);
     yield* validateBackendNoneConstraints(config, providedFlags);
     yield* validateSelfBackendConstraints(config, providedFlags);
     yield* validateBackendConstraints(config, providedFlags, options);
