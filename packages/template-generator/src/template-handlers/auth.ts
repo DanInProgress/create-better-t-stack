@@ -135,7 +135,75 @@ export async function processAuthTemplates(
     return;
   }
 
-  if (config.backend !== "convex" && config.backend !== "none") {
+  if (config.backend === "pocketbase" && authProvider === "pocketbase-auth") {
+    processTemplatesFromPrefix(
+      vfs,
+      templates,
+      "auth/pocketbase-auth/pocketbase/backend",
+      "packages/backend",
+      config,
+    );
+
+    if (hasReactWeb) {
+      const reactFramework = config.frontend.find((f) =>
+        ["tanstack-router", "react-router", "tanstack-start", "next"].includes(f),
+      );
+      if (reactFramework) {
+        processTemplatesFromPrefix(
+          vfs,
+          templates,
+          `auth/pocketbase-auth/pocketbase/web/${reactFramework}`,
+          "apps/web",
+          config,
+        );
+      }
+    } else if (hasNuxtWeb) {
+      processTemplatesFromPrefix(
+        vfs,
+        templates,
+        "auth/pocketbase-auth/pocketbase/web/nuxt",
+        "apps/web",
+        config,
+      );
+    } else if (hasSvelteWeb) {
+      processTemplatesFromPrefix(
+        vfs,
+        templates,
+        "auth/pocketbase-auth/pocketbase/web/svelte",
+        "apps/web",
+        config,
+      );
+    } else if (hasSolidWeb) {
+      processTemplatesFromPrefix(
+        vfs,
+        templates,
+        "auth/pocketbase-auth/pocketbase/web/solid",
+        "apps/web",
+        config,
+      );
+    } else if (hasAstroWeb) {
+      processTemplatesFromPrefix(
+        vfs,
+        templates,
+        "auth/pocketbase-auth/pocketbase/web/astro",
+        "apps/web",
+        config,
+      );
+    }
+
+    if (hasNative) {
+      processTemplatesFromPrefix(
+        vfs,
+        templates,
+        "auth/pocketbase-auth/pocketbase/native",
+        "apps/native",
+        config,
+      );
+    }
+    return;
+  }
+
+  if (config.backend !== "convex" && config.backend !== "pocketbase" && config.backend !== "none") {
     processTemplatesFromPrefix(
       vfs,
       templates,

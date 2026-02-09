@@ -70,6 +70,18 @@ function getConvexVar(frontend: string[]) {
   return "VITE_CONVEX_URL";
 }
 
+function getPocketBaseVar(frontend: string[]) {
+  const hasNextJs = frontend.includes("next");
+  const hasNuxt = frontend.includes("nuxt");
+  const hasSvelte = frontend.includes("svelte");
+  const hasTanstackStart = frontend.includes("tanstack-start");
+  if (hasNextJs) return "NEXT_PUBLIC_POCKETBASE_URL";
+  if (hasNuxt) return "NUXT_PUBLIC_POCKETBASE_URL";
+  if (hasSvelte) return "PUBLIC_POCKETBASE_URL";
+  if (hasTanstackStart) return "VITE_POCKETBASE_URL";
+  return "VITE_POCKETBASE_URL";
+}
+
 function addEnvVariablesToContent(currentContent: string, variables: EnvVariable[]): string {
   let envContent = currentContent || "";
   let contentToAdd = "";
@@ -123,14 +135,24 @@ function buildClientVars(
   const hasTanStackStart = frontend.includes("tanstack-start");
 
   const baseVar = getClientServerVar(frontend, backend);
-  const envVarName = backend === "convex" ? getConvexVar(frontend) : baseVar.key;
-  const serverUrl = backend === "convex" ? "https://<YOUR_CONVEX_URL>" : baseVar.value;
+  const envVarName =
+    backend === "convex"
+      ? getConvexVar(frontend)
+      : backend === "pocketbase"
+        ? getPocketBaseVar(frontend)
+        : baseVar.key;
+  const serverUrl =
+    backend === "convex"
+      ? "https://<YOUR_CONVEX_URL>"
+      : backend === "pocketbase"
+        ? "http://127.0.0.1:8090"
+        : baseVar.value;
 
   const vars: EnvVariable[] = [
     {
       key: envVarName,
       value: serverUrl,
-      condition: backend === "convex" ? true : baseVar.write,
+      condition: backend === "convex" || backend === "pocketbase" ? true : baseVar.write,
     },
   ];
 
@@ -206,6 +228,11 @@ function buildNativeVars(
   if (backend === "convex") {
     envVarName = "EXPO_PUBLIC_CONVEX_URL";
     serverUrl = "https://<YOUR_CONVEX_URL>";
+  }
+
+  if (backend === "pocketbase") {
+    envVarName = "EXPO_PUBLIC_POCKETBASE_URL";
+    serverUrl = "http://127.0.0.1:8090";
   }
 
   const vars: EnvVariable[] = [
@@ -506,6 +533,11 @@ export function processEnvVariables(vfs: VirtualFileSystem, config: ProjectConfi
         vfs.writeFile(envLocalPath, contentWithVars);
       }
     }
+    return;
+  }
+
+  // --- PocketBase Backend ---
+  if (backend === "pocketbase") {
     return;
   }
 

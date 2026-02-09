@@ -15,6 +15,14 @@ export function processBackendDeps(vfs: VirtualFileSystem, config: ProjectConfig
     return;
   }
 
+  if (backend === "pocketbase") {
+    const pocketbasePath = "packages/backend/package.json";
+    if (vfs.exists(pocketbasePath)) {
+      addPackageDependency({ vfs, packagePath: pocketbasePath, dependencies: ["pocketbase"] });
+    }
+    return;
+  }
+
   const serverPath = "apps/server/package.json";
   if (!vfs.exists(serverPath) || backend === "self" || backend === "none") return;
 

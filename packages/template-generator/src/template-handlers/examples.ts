@@ -26,6 +26,56 @@ export async function processExampleTemplates(
   for (const example of config.examples) {
     if (example === "none") continue;
 
+    if (config.backend === "pocketbase") {
+      if (hasReactWeb) {
+        const reactFramework = config.frontend.find((f) =>
+          ["next", "react-router", "tanstack-router", "tanstack-start"].includes(f),
+        );
+        if (reactFramework) {
+          processTemplatesFromPrefix(
+            vfs,
+            templates,
+            `examples/${example}/pocketbase/web/${reactFramework}`,
+            "apps/web",
+            config,
+          );
+        }
+      } else if (hasNuxtWeb) {
+        processTemplatesFromPrefix(
+          vfs,
+          templates,
+          `examples/${example}/pocketbase/web/nuxt`,
+          "apps/web",
+          config,
+        );
+      } else if (hasSvelteWeb) {
+        processTemplatesFromPrefix(
+          vfs,
+          templates,
+          `examples/${example}/pocketbase/web/svelte`,
+          "apps/web",
+          config,
+        );
+      } else if (hasSolidWeb) {
+        processTemplatesFromPrefix(
+          vfs,
+          templates,
+          `examples/${example}/pocketbase/web/solid`,
+          "apps/web",
+          config,
+        );
+      } else if (hasAstroWeb) {
+        processTemplatesFromPrefix(
+          vfs,
+          templates,
+          `examples/${example}/pocketbase/web/astro`,
+          "apps/web",
+          config,
+        );
+      }
+      continue;
+    }
+
     if (config.backend === "convex") {
       processTemplatesFromPrefix(
         vfs,

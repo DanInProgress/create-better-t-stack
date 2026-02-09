@@ -25,9 +25,9 @@ import { setupTurso } from "../database-providers/turso-setup";
 export async function setupDatabase(config: ProjectConfig, cliInput?: { manualDb?: boolean }) {
   const { database, dbSetup, backend, projectDir } = config;
 
-  if (backend === "convex" || database === "none") {
-    // Clean up server db dir if not using convex
-    if (backend !== "convex") {
+  if (backend === "convex" || backend === "pocketbase" || database === "none") {
+    // Clean up server db dir if not using convex or pocketbase
+    if (backend !== "convex" && backend !== "pocketbase") {
       const serverDbDir = path.join(projectDir, "apps/server/src/db");
       if (await fs.pathExists(serverDbDir)) {
         await fs.remove(serverDbDir);
