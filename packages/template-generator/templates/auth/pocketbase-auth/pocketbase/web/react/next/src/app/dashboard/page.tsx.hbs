@@ -1,0 +1,35 @@
+"use client";
+
+import SignInForm from "@/components/sign-in-form";
+import SignUpForm from "@/components/sign-up-form";
+import UserMenu from "@/components/user-menu";
+import pb from "@/lib/pocketbase";
+import { useState, useEffect } from "react";
+
+export default function DashboardPage() {
+	const [showSignIn, setShowSignIn] = useState(false);
+	const [isValid, setIsValid] = useState(pb.authStore.isValid);
+
+	useEffect(() => {
+		const unsubscribe = pb.authStore.onChange(() => {
+			setIsValid(pb.authStore.isValid);
+		});
+		return () => unsubscribe();
+	}, []);
+
+	if (!isValid) {
+		return showSignIn ? (
+			<SignInForm onSwitchToSignUp={() => setShowSignIn(false)} />
+		) : (
+			<SignUpForm onSwitchToSignIn={() => setShowSignIn(true)} />
+		);
+	}
+
+	return (
+		<div>
+			<h1>Dashboard</h1>
+			<p>Welcome, {pb.authStore.record?.name || pb.authStore.record?.email}</p>
+			<UserMenu />
+		</div>
+	);
+}

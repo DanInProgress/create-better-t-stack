@@ -1,0 +1,31 @@
+[
+{{#if (includes examples "todo")}}
+  {
+    "name": "todos",
+    "type": "base",
+    "schema": [
+      {
+        "name": "text",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "completed",
+        "type": "bool",
+        "required": true
+      }
+    ]
+  },
+{{/if}}
+  {
+    "name": "health",
+    "type": "base",
+    "schema": [
+      {
+        "name": "status",
+        "type": "text",
+        "required": true
+      }
+    ]
+  }
+]
