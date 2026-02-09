@@ -9,7 +9,7 @@ export async function getApiChoice(
   frontend?: Frontend[],
   backend?: Backend,
 ) {
-  if (backend === "convex" || backend === "none") {
+  if (backend === "convex" || backend === "pocketbase" || backend === "none") {
     return "none";
   }
 
