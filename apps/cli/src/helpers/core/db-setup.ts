@@ -18,12 +18,39 @@ import { setupDockerCompose } from "../database-providers/docker-compose-setup";
 import { setupMongoDBAtlas } from "../database-providers/mongodb-atlas-setup";
 import { setupNeonPostgres } from "../database-providers/neon-setup";
 import { setupPlanetScale } from "../database-providers/planetscale-setup";
+import { setupPocketBasePocketHost } from "../database-providers/pocketbase-pockethost-setup";
+import { setupPocketBaseSelfHosted } from "../database-providers/pocketbase-self-hosted-setup";
 import { setupPrismaPostgres } from "../database-providers/prisma-postgres-setup";
 import { setupSupabase } from "../database-providers/supabase-setup";
 import { setupTurso } from "../database-providers/turso-setup";
 
 export async function setupDatabase(config: ProjectConfig, cliInput?: { manualDb?: boolean }) {
-  const { database, dbSetup, backend, projectDir } = config;
+  const { database, dbSetup, backend, projectDir, pbDeployment } = config;
+
+  // Handle PocketBase backend setup
+  if (backend === "pocketbase") {
+    // Helper to run setup and handle Result
+    async function runSetup<T, E extends UserCancelledError | DatabaseSetupError>(
+      setupFn: () => Promise<Result<T, E>>,
+    ): Promise<void> {
+      const result = await setupFn();
+      if (result.isErr()) {
+        // Re-throw user cancellation to propagate up
+        if (UserCancelledError.is(result.error)) {
+          throw result.error;
+        }
+        // Log other errors but don't fail the overall project creation
+        consola.error(pc.red(result.error.message));
+      }
+    }
+
+    if (pbDeployment === "self-hosted") {
+      await runSetup(() => setupPocketBaseSelfHosted(config, cliInput));
+    } else if (pbDeployment === "pockethost") {
+      await runSetup(() => setupPocketBasePocketHost(config, cliInput));
+    }
+    return;
+  }
 
   if (backend === "convex" || database === "none") {
     // Clean up server db dir if not using convex
