@@ -34,6 +34,7 @@ export async function displayPostInstallInstructions(
   } = config;
 
   const isConvex = backend === "convex";
+  const isPocketBase = backend === "pocketbase";
   const isBackendSelf = backend === "self";
   const runCmd =
     packageManager === "npm" ? "npm run" : packageManager === "pnpm" ? "pnpm run" : "bun run";
@@ -137,6 +138,12 @@ export async function displayPostInstallInstructions(
     output += `${pc.cyan(`${stepCounter++}.`)} Copy environment variables from\n${pc.white(
       "   packages/backend/.env.local",
     )} to ${pc.white("apps/*/.env")}\n`;
+    output += `${pc.cyan(`${stepCounter++}.`)} ${runCmd} dev\n\n`;
+  } else if (isPocketBase) {
+    output += `${pc.cyan(`${stepCounter++}.`)} Download PocketBase binary to ${pc.white(
+      "packages/backend",
+    )}\n`;
+    output += `${pc.cyan(`${stepCounter++}.`)} cd packages/backend && ./pocketbase serve\n`;
     output += `${pc.cyan(`${stepCounter++}.`)} ${runCmd} dev\n\n`;
   } else if (isBackendSelf) {
     output += `${pc.cyan(`${stepCounter++}.`)} ${runCmd} dev\n`;

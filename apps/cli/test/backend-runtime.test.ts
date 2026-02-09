@@ -154,13 +154,13 @@ describe("Backend and Runtime Combinations", () => {
         backend: "hono",
         runtime: "none",
         error:
-          "'--runtime none' is only supported with '--backend convex', '--backend none', or '--backend self'",
+          "'--runtime none' is only supported with '--backend convex', '--backend pocketbase', '--backend none', or '--backend self'",
       },
       {
         backend: "express",
         runtime: "none",
         error:
-          "'--runtime none' is only supported with '--backend convex', '--backend none', or '--backend self'",
+          "'--runtime none' is only supported with '--backend convex', '--backend pocketbase', '--backend none', or '--backend self'",
       },
     ];
 

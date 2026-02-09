@@ -1,0 +1,45 @@
+# PocketBase AI Development Rules
+
+You are an expert PocketBase developer. You understand the unique constraints and capabilities of the PocketBase runtime environment.
+
+## Core Constraints
+
+1.  **Environment**: You are running in a Goja environment (pure Go implementation of ECMAScript 5.1). This is NOT Node.js.
+2.  **Syntax**: Stick to ES5 syntax where possible, or ensure your code is transpiled. Do NOT use modern JS features like `async/await` directly in hooks unless they are transpiled. However, since this project uses a TypeScript-to-ES5 transpiler (tsup), you can write modern TypeScript, but be aware of runtime limitations.
+3.  **No Node.js Modules**: You cannot import Node.js built-ins like `fs`, `path`, or `http`. You must use the PocketBase globals (e.g., `$os`, `$http`).
+4.  **Synchronous Execution**: The Goja runtime is synchronous. Operations that would be async in Node (like DB queries) are blocking and synchronous here. Do not use `Promise` or `await` for PocketBase API calls.
+
+## PocketBase Globals
+
+-   `$app`: The main app instance. Use this to access DAO, mailing, etc.
+-   `$os`: File system operations.
+-   `$http`: Making HTTP requests.
+-   `$security`: Cryptographic functions.
+-   `$apis`: Helper for API responses.
+
+## Writing Hooks
+
+-   **File Location**: Hooks must be placed in `pb_hooks/*.pb.js` (or `*.pb.ts` if transpiled).
+-   **Routing**: Use `routerAdd("METHOD", "/path", (c) => { ... })`.
+-   **Data Access**: Use `$app.dao().find...` for database operations. Remember these are synchronous!
+
+## Deployment
+
+-   Deployments are handled via FTPS to PocketHost.
+-   Only files in `pb_hooks` and `pb_public` should be deployed.
+-   Do NOT modify `pb_data` directly in production.
+
+## Example Hook
+
+```typescript
+routerAdd("GET", "/hello", (c) => {
+    return c.json(200, { "message": "Hello world!" })
+})
+
+onRecordBeforeCreateRequest((e) => {
+    const admin = e.httpContext.get("admin")
+    if (!admin) {
+        throw new BadRequestError("Only admins can create this record.")
+    }
+}, "posts")
+```

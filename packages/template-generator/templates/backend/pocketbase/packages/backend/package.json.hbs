@@ -1,0 +1,18 @@
+{
+  "name": "@{{projectName}}/backend",
+  "version": "1.0.0",
+  "description": "PocketBase backend with TypeScript hooks",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "start": "./pocketbase serve"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "pocketbase-typegen": "^1.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -61,6 +61,21 @@ export const env = createEnv({
 	},
 	runtimeEnv: (import.meta as any).env,
 {{/if}}
+{{else if (eq backend "pocketbase")}}
+{{#if (includes frontend "next")}}
+	client: {
+		NEXT_PUBLIC_POCKETBASE_URL: z.url(),
+	},
+	runtimeEnv: {
+		NEXT_PUBLIC_POCKETBASE_URL: process.env.NEXT_PUBLIC_POCKETBASE_URL,
+	},
+{{else}}
+	clientPrefix: "VITE_",
+	client: {
+		VITE_POCKETBASE_URL: z.url(),
+	},
+	runtimeEnv: (import.meta as any).env,
+{{/if}}
 {{else if (eq backend "self")}}
 {{#if (includes frontend "next")}}
 	client: {},

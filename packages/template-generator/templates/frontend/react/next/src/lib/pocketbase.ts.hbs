@@ -1,0 +1,5 @@
+import PocketBase from 'pocketbase';
+import { env } from "@{{projectName}}/env/web";
+
+// Globally available PocketBase instance
+export const pb = new PocketBase(env.NEXT_PUBLIC_POCKETBASE_URL);
