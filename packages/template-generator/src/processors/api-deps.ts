@@ -37,6 +37,11 @@ export function processApiDeps(vfs: VirtualFileSystem, config: ProjectConfig): v
     return;
   }
 
+  if (backend === "pocketbase") {
+    addPocketbaseDeps(vfs, frontendType);
+    return;
+  }
+
   if (api === "none") return;
 
   addApiPackageDeps(vfs, api, backend, frontend, auth);
@@ -286,5 +291,18 @@ function addConvexDeps(
 
   if (nativeExists && frontendType.hasNative) {
     addPackageDependency({ vfs, packagePath: nativePath, dependencies: ["convex"] });
+  }
+}
+
+function addPocketbaseDeps(vfs: VirtualFileSystem, frontendType: FrontendType): void {
+  const webPath = "apps/web/package.json";
+  const nativePath = "apps/native/package.json";
+
+  if (vfs.exists(webPath)) {
+    addPackageDependency({ vfs, packagePath: webPath, dependencies: ["pocketbase"] });
+  }
+
+  if (vfs.exists(nativePath) && frontendType.hasNative) {
+    addPackageDependency({ vfs, packagePath: nativePath, dependencies: ["pocketbase"] });
   }
 }
