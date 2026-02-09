@@ -596,6 +596,7 @@ describe("Integration Tests - Real World Scenarios", () => {
       { runtime: "node", backend: "express" },
       { runtime: "workers", backend: "hono" },
       { runtime: "none", backend: "convex" },
+      { runtime: "none", backend: "pocketbase" },
     ];
 
     for (const { runtime, backend } of runtimeConfigs) {
@@ -613,6 +614,16 @@ describe("Integration Tests - Real World Scenarios", () => {
           config.database = "none";
           config.orm = "none";
           config.auth = "clerk";
+          config.api = "none";
+          config.addons = ["none"];
+          config.examples = ["none"];
+          config.dbSetup = "none";
+          config.webDeploy = "none";
+          config.serverDeploy = "none";
+        } else if (backend === "pocketbase") {
+          config.database = "none";
+          config.orm = "none";
+          config.auth = "pocketbase-auth";
           config.api = "none";
           config.addons = ["none"];
           config.examples = ["none"];
