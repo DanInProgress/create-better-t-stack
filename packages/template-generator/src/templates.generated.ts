@@ -10308,6 +10308,249 @@ export default defineSchema({
   "dependencies": {}
 }
 `],
+  ["backend/pocketbase/.github/workflows/deploy.yml", `name: Deploy to PocketHost
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/backend/**'
+
+jobs:
+  web-deploy:
+    name: Deploy to PocketHost
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: 📦 Install dependencies
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - name: 🔨 Build Backend Hooks
+        run: bun run build --filter=@{{projectName}}/backend
+
+      - name: 📂 Sync Hooks
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ftp.pockethost.io
+          username: $\\{{ secrets.POCKETHOST_USERNAME }}
+          password: $\\{{ secrets.POCKETHOST_PASSWORD }}
+          local-dir: ./packages/backend/pb_hooks/
+          server-dir: /pb_hooks/
+
+      - name: 📂 Sync Migrations
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ftp.pockethost.io
+          username: $\\{{ secrets.POCKETHOST_USERNAME }}
+          password: $\\{{ secrets.POCKETHOST_PASSWORD }}
+          local-dir: ./packages/backend/pb_migrations/
+          server-dir: /pb_migrations/
+`],
+  ["backend/pocketbase/packages/backend/.cursorrules", `# PocketBase AI Development Rules
+
+You are an expert PocketBase developer. You understand the unique constraints and capabilities of the PocketBase runtime environment.
+
+## Core Constraints
+
+1.  **Environment**: You are running in a Goja environment (pure Go implementation of ECMAScript 5.1). This is NOT Node.js.
+2.  **Syntax**: Stick to ES5 syntax where possible, or ensure your code is transpiled. Do NOT use modern JS features like \`async/await\` directly in hooks unless they are transpiled. However, since this project uses a TypeScript-to-ES5 transpiler (tsup), you can write modern TypeScript, but be aware of runtime limitations.
+3.  **No Node.js Modules**: You cannot import Node.js built-ins like \`fs\`, \`path\`, or \`http\`. You must use the PocketBase globals (e.g., \`$os\`, \`$http\`).
+4.  **Synchronous Execution**: The Goja runtime is synchronous. Operations that would be async in Node (like DB queries) are blocking and synchronous here. Do not use \`Promise\` or \`await\` for PocketBase API calls.
+
+## PocketBase Globals
+
+-   \`$app\`: The main app instance. Use this to access DAO, mailing, etc.
+-   \`$os\`: File system operations.
+-   \`$http\`: Making HTTP requests.
+-   \`$security\`: Cryptographic functions.
+-   \`$apis\`: Helper for API responses.
+
+## Writing Hooks
+
+-   **File Location**: Hooks must be placed in \`pb_hooks/*.pb.js\` (or \`*.pb.ts\` if transpiled).
+-   **Routing**: Use \`routerAdd("METHOD", "/path", (c) => { ... })\`.
+-   **Data Access**: Use \`$app.dao().find...\` for database operations. Remember these are synchronous!
+
+## Deployment
+
+-   Deployments are handled via FTPS to PocketHost.
+-   Only files in \`pb_hooks\` and \`pb_public\` should be deployed.
+-   Do NOT modify \`pb_data\` directly in production.
+
+## Example Hook
+
+\`\`\`typescript
+routerAdd("GET", "/hello", (c) => {
+    return c.json(200, { "message": "Hello world!" })
+})
+
+onRecordBeforeCreateRequest((e) => {
+    const admin = e.httpContext.get("admin")
+    if (!admin) {
+        throw new BadRequestError("Only admins can create this record.")
+    }
+}, "posts")
+\`\`\`
+`],
+  ["backend/pocketbase/packages/backend/.gitignore", `# PocketBase
+/pb_data
+/pb_hooks/*.js
+/pb_hooks/*.map
+!/pb_hooks/.gitkeep
+pocketbase
+pocketbase.exe
+
+# Node
+node_modules
+dist
+`],
+  ["backend/pocketbase/packages/backend/package.json.hbs", `{
+  "name": "@{{projectName}}/backend",
+  "version": "1.0.0",
+  "description": "PocketBase backend with TypeScript hooks",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "start": "./pocketbase serve"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "pocketbase-typegen": "^1.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+`],
+  ["backend/pocketbase/packages/backend/pb_hooks/.gitkeep", ``],
+  ["backend/pocketbase/packages/backend/pb_migrations/.gitkeep", ``],
+  ["backend/pocketbase/packages/backend/pocketbase.d.ts", `/// <reference no-default-lib="true"/>
+/// <reference lib="es5" />
+
+// Basic PocketBase JSVM type definitions
+// Based on PocketBase documentation
+
+declare namespace pb {
+    interface App {
+        dao(): Dao;
+        // Add other methods as needed
+    }
+
+    interface Dao {
+        findRecordById(collection: string, id: string): Record;
+        findRecordsByFilter(collection: string, filter: string, sort: string, limit: number, offset: number): Record[];
+        saveRecord(record: Record): void;
+        deleteRecord(record: Record): void;
+    }
+
+    interface Record {
+        id: string;
+        created: string;
+        updated: string;
+        collectionId: string;
+        collectionName: string;
+        get(key: string): any;
+        set(key: string, value: any): void;
+        // ...
+    }
+
+    interface Context {
+        json(status: number, data: any): void;
+        // ...
+    }
+
+    interface Event {
+        httpContext: any; // Simplified
+        record: Record;
+    }
+}
+
+declare const $app: pb.App;
+declare const $os: any;
+declare const $http: any;
+declare const $security: any;
+declare const $apis: any;
+
+declare function routerAdd(method: string, path: string, handler: (c: any) => any): void;
+declare function onRecordBeforeCreateRequest(handler: (e: any) => any, ...collections: string[]): void;
+// Add other hooks as needed
+`],
+  ["backend/pocketbase/packages/backend/README.md", `# PocketBase Backend
+
+This directory contains the PocketBase backend configuration and hooks.
+
+## Getting Started
+
+1.  **Download PocketBase**: Download the appropriate PocketBase binary for your OS from the [releases page](https://pocketbase.io/docs/) and place it in this directory (\`packages/backend/\`).
+2.  **Start the Server**: Run \`./pocketbase serve\` (Linux/Mac) or \`pocketbase.exe serve\` (Windows).
+3.  **Access Admin UI**: Open http://127.0.0.1:8090/_/ in your browser to create your admin account.
+
+## Development
+
+-   **Hooks**: Write your TypeScript hooks in \`src/\`. They will be compiled to \`pb_hooks/\` by running \`bun run dev\` or \`bun run build\`.
+-   **Types**: If you change your collections, run \`npm run typegen\` (if you have the typegen tool installed) to update TypeScript definitions.
+
+## Deployment
+
+This project is configured for deployment to [PocketHost](https://pockethost.io) via GitHub Actions.
+
+1.  Create a PocketHost instance.
+2.  Get your FTP credentials from the PocketHost dashboard.
+3.  Add \`POCKETHOST_USERNAME\` and \`POCKETHOST_PASSWORD\` as secrets in your GitHub repository.
+4.  Push changes to \`main\` to trigger deployment.
+`],
+  ["backend/pocketbase/packages/backend/src/main.pb.ts", `/// <reference path="../pocketbase.d.ts" />
+
+routerAdd("GET", "/hello", (c) => {
+    return c.json(200, { "message": "Hello from PocketBase TypeScript hooks!" })
+})
+
+onRecordBeforeCreateRequest((e) => {
+    // Example hook logic
+    const admin = e.httpContext.get("admin")
+    if (!admin) {
+        // e.record.set("status", "pending")
+    }
+}, "users")
+`],
+  ["backend/pocketbase/packages/backend/tsconfig.json.hbs", `{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "strict": true,
+    "lib": ["ES5"],
+    "outDir": "pb_hooks",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["node_modules/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}
+`],
+  ["backend/pocketbase/packages/backend/tsup.config.ts", `import { defineConfig } from 'tsup';
+
+export default defineConfig({
+  entry: ['src/main.pb.ts'],
+  outDir: 'pb_hooks',
+  format: ['cjs'],
+  target: 'es5',
+  noExternal: [/(.*)/],
+  clean: true,
+  minify: false,
+  splitting: false,
+});
+`],
   ["backend/server/base/_gitignore", `# prod
 dist/
 /build
@@ -21679,6 +21922,9 @@ initOpenNextCloudflareForDev();
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "sonner": "^2.0.5",
+    {{#if (eq backend 'pocketbase')}}
+    "pocketbase": "^0.21.0",
+    {{/if}}
     "tailwind-merge": "^3.3.1",
     "tw-animate-css": "^1.3.4",
     "babel-plugin-react-compiler": "^1.0.0"
@@ -21781,6 +22027,9 @@ export default function RootLayout({
 {{#if (eq backend "convex")}}
 import { useQuery } from "convex/react";
 import { api } from "@{{projectName}}/backend/convex/_generated/api";
+{{else if (eq backend "pocketbase")}}
+import { pb } from "@/lib/pocketbase";
+import { useEffect, useState } from "react";
 {{else if (or (eq api "orpc") (eq api "trpc"))}}
 import { useQuery } from "@tanstack/react-query";
   {{#if (eq api "orpc")}}
@@ -21810,6 +22059,15 @@ const TITLE_TEXT = \`
 export default function Home() {
   {{#if (eq backend "convex")}}
   const healthCheck = useQuery(api.healthCheck.get);
+  {{else if (eq backend "pocketbase")}}
+  const [healthCheck, setHealthCheck] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    pb.health.check().then((res) => {
+        setHealthCheck(res.code === 200 ? "OK" : "Error");
+    }).catch(() => {
+        setHealthCheck("Error");
+    });
+  }, []);
   {{else if (eq api "orpc")}}
   const healthCheck = useQuery(orpc.healthCheck.queryOptions());
   {{else if (eq api "trpc")}}
@@ -21826,6 +22084,19 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <div
               className={\`h-2 w-2 rounded-full \${healthCheck === "OK" ? "bg-green-500" : healthCheck === undefined ? "bg-orange-400" : "bg-red-500"}\`}
+            />
+            <span className="text-sm text-muted-foreground">
+              {healthCheck === undefined
+                ? "Checking..."
+                : healthCheck === "OK"
+                  ? "Connected"
+                  : "Error"}
+            </span>
+          </div>
+          {{else if (eq backend "pocketbase")}}
+          <div className="flex items-center gap-2">
+            <div
+              className={\\\`h-2 w-2 rounded-full \\\${healthCheck === "OK" ? "bg-green-500" : healthCheck === undefined ? "bg-orange-400" : "bg-red-500"}\\\`}
             />
             <span className="text-sm text-muted-foreground">
               {healthCheck === undefined
@@ -21996,6 +22267,12 @@ export function ThemeProvider({
 }: React.ComponentProps<typeof NextThemesProvider>) {
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>
 }
+`],
+  ["frontend/react/next/src/lib/pocketbase.ts.hbs", `import PocketBase from 'pocketbase';
+import { env } from "@{{projectName}}/env/web";
+
+// Globally available PocketBase instance
+export const pb = new PocketBase(env.NEXT_PUBLIC_POCKETBASE_URL);
 `],
   ["frontend/react/next/tsconfig.json.hbs", `{
   "compilerOptions": {
@@ -24978,6 +25255,8 @@ export const env = createEnv({
 {{#if (eq auth "clerk")}}
 		EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
 {{/if}}
+{{else if (eq backend "pocketbase")}}
+		EXPO_PUBLIC_POCKETBASE_URL: z.url(),
 {{else}}
 		EXPO_PUBLIC_SERVER_URL: z.url(),
 {{/if}}
@@ -25084,6 +25363,21 @@ export const env = createEnv({
 {{#if (eq auth "clerk")}}
 		VITE_CLERK_PUBLISHABLE_KEY: z.string().min(1),
 {{/if}}
+	},
+	runtimeEnv: (import.meta as any).env,
+{{/if}}
+{{else if (eq backend "pocketbase")}}
+{{#if (includes frontend "next")}}
+	client: {
+		NEXT_PUBLIC_POCKETBASE_URL: z.url(),
+	},
+	runtimeEnv: {
+		NEXT_PUBLIC_POCKETBASE_URL: process.env.NEXT_PUBLIC_POCKETBASE_URL,
+	},
+{{else}}
+	clientPrefix: "VITE_",
+	client: {
+		VITE_POCKETBASE_URL: z.url(),
 	},
 	runtimeEnv: (import.meta as any).env,
 {{/if}}
@@ -25634,4 +25928,4 @@ function SuccessPage() {
 `]
 ]);
 
-export const TEMPLATE_COUNT = 435;
+export const TEMPLATE_COUNT = 447;

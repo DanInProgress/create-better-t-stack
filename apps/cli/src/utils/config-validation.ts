@@ -71,6 +71,45 @@ export function validateDatabaseOrmAuth(
   return Result.ok(undefined);
 }
 
+export function validatePocketBaseConstraints(
+  config: Partial<ProjectConfig>,
+  providedFlags: Set<string>,
+): ValidationResult {
+  const { backend } = config;
+
+  if (backend !== "pocketbase") {
+    return Result.ok(undefined);
+  }
+
+  const has = (k: string) => providedFlags.has(k);
+
+  if (has("runtime") && config.runtime !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--runtime none'. Please remove the --runtime flag or set it to 'none'.",
+    );
+  }
+
+  if (has("database") && config.database !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--database none' (it has built-in SQLite). Please remove the --database flag or set it to 'none'.",
+    );
+  }
+
+  if (has("orm") && config.orm !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--orm none'. Please remove the --orm flag or set it to 'none'.",
+    );
+  }
+
+  if (has("dbSetup") && config.dbSetup !== "none") {
+    return validationErr(
+      "PocketBase backend requires '--db-setup none'. Please remove the --db-setup flag or set it to 'none'.",
+    );
+  }
+
+  return Result.ok(undefined);
+}
+
 export function validateDatabaseSetup(
   config: Partial<ProjectConfig>,
   providedFlags: Set<string>,
@@ -351,12 +390,13 @@ export function validateBackendConstraints(
     providedFlags.has("backend") &&
     backend &&
     backend !== "convex" &&
+    backend !== "pocketbase" &&
     backend !== "none" &&
     backend !== "self"
   ) {
     if (providedFlags.has("runtime") && options.runtime === "none") {
       return validationErr(
-        "'--runtime none' is only supported with '--backend convex', '--backend none', or '--backend self'. Please choose 'bun', 'node', or remove the --runtime flag.",
+        "'--runtime none' is only supported with '--backend convex', '--backend pocketbase', '--backend none', or '--backend self'. Please choose 'bun', 'node', or remove the --runtime flag.",
       );
     }
   }
@@ -436,6 +476,7 @@ export function validateFullConfig(
     yield* validateDatabaseSetup(config, providedFlags);
 
     yield* validateConvexConstraints(config, providedFlags);
+    yield* validatePocketBaseConstraints(config, providedFlags);
     yield* validateBackendNoneConstraints(config, providedFlags);
     yield* validateSelfBackendConstraints(config, providedFlags);
     yield* validateBackendConstraints(config, providedFlags, options);
@@ -492,6 +533,8 @@ export function validateFullConfig(
 export function validateConfigForProgrammaticUse(config: Partial<ProjectConfig>): ValidationResult {
   return Result.gen(function* () {
     yield* validateDatabaseOrmAuth(config);
+    yield* validatePocketBaseConstraints(config, new Set(Object.keys(config)));
+    yield* validateConvexConstraints(config, new Set(Object.keys(config)));
 
     if (config.frontend && config.frontend.length > 0) {
       yield* ensureSingleWebAndNative(config.frontend);

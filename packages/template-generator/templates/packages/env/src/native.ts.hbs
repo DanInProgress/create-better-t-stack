@@ -12,6 +12,8 @@ export const env = createEnv({
 {{#if (eq auth "clerk")}}
 		EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
 {{/if}}
+{{else if (eq backend "pocketbase")}}
+		EXPO_PUBLIC_POCKETBASE_URL: z.url(),
 {{else}}
 		EXPO_PUBLIC_SERVER_URL: z.url(),
 {{/if}}

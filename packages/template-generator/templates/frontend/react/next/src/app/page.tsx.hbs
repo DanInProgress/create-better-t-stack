@@ -2,6 +2,9 @@
 {{#if (eq backend "convex")}}
 import { useQuery } from "convex/react";
 import { api } from "@{{projectName}}/backend/convex/_generated/api";
+{{else if (eq backend "pocketbase")}}
+import { pb } from "@/lib/pocketbase";
+import { useEffect, useState } from "react";
 {{else if (or (eq api "orpc") (eq api "trpc"))}}
 import { useQuery } from "@tanstack/react-query";
   {{#if (eq api "orpc")}}
@@ -31,6 +34,15 @@ const TITLE_TEXT = `
 export default function Home() {
   {{#if (eq backend "convex")}}
   const healthCheck = useQuery(api.healthCheck.get);
+  {{else if (eq backend "pocketbase")}}
+  const [healthCheck, setHealthCheck] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    pb.health.check().then((res) => {
+        setHealthCheck(res.code === 200 ? "OK" : "Error");
+    }).catch(() => {
+        setHealthCheck("Error");
+    });
+  }, []);
   {{else if (eq api "orpc")}}
   const healthCheck = useQuery(orpc.healthCheck.queryOptions());
   {{else if (eq api "trpc")}}
@@ -47,6 +59,19 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <div
               className={`h-2 w-2 rounded-full ${healthCheck === "OK" ? "bg-green-500" : healthCheck === undefined ? "bg-orange-400" : "bg-red-500"}`}
+            />
+            <span className="text-sm text-muted-foreground">
+              {healthCheck === undefined
+                ? "Checking..."
+                : healthCheck === "OK"
+                  ? "Connected"
+                  : "Error"}
+            </span>
+          </div>
+          {{else if (eq backend "pocketbase")}}
+          <div className="flex items-center gap-2">
+            <div
+              className={\`h-2 w-2 rounded-full \${healthCheck === "OK" ? "bg-green-500" : healthCheck === undefined ? "bg-orange-400" : "bg-red-500"}\`}
             />
             <span className="text-sm text-muted-foreground">
               {healthCheck === undefined

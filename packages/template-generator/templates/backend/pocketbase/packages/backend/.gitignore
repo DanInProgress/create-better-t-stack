@@ -1,0 +1,11 @@
+# PocketBase
+/pb_data
+/pb_hooks/*.js
+/pb_hooks/*.map
+!/pb_hooks/.gitkeep
+pocketbase
+pocketbase.exe
+
+# Node
+node_modules
+dist

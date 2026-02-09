@@ -1,0 +1,44 @@
+name: Deploy to PocketHost
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/backend/**'
+
+jobs:
+  web-deploy:
+    name: Deploy to PocketHost
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: 📦 Install dependencies
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - name: 🔨 Build Backend Hooks
+        run: bun run build --filter=@{{projectName}}/backend
+
+      - name: 📂 Sync Hooks
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ftp.pockethost.io
+          username: $\{{ secrets.POCKETHOST_USERNAME }}
+          password: $\{{ secrets.POCKETHOST_PASSWORD }}
+          local-dir: ./packages/backend/pb_hooks/
+          server-dir: /pb_hooks/
+
+      - name: 📂 Sync Migrations
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ftp.pockethost.io
+          username: $\{{ secrets.POCKETHOST_USERNAME }}
+          password: $\{{ secrets.POCKETHOST_PASSWORD }}
+          local-dir: ./packages/backend/pb_migrations/
+          server-dir: /pb_migrations/
