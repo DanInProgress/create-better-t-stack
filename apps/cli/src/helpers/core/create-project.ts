@@ -34,6 +34,7 @@ export async function createProject(
   return Result.gen(async function* () {
     const projectDir = options.projectDir;
     const isConvex = options.backend === "convex";
+    const isPocketBase = options.backend === "pocketbase";
 
     // Ensure project directory exists
     yield* Result.await(
@@ -84,7 +85,7 @@ export async function createProject(
     yield* Result.await(setPackageManagerVersion(projectDir, options.packageManager));
 
     // Setup database if needed
-    if (!isConvex && options.database !== "none") {
+    if (!isConvex && !isPocketBase && options.database !== "none") {
       yield* Result.await(
         Result.tryPromise({
           try: () => setupDatabase(options, cliInput),

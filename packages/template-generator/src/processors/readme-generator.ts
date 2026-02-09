@@ -26,6 +26,7 @@ function generateReadmeContent(options: ProjectConfig): string {
   } = options;
 
   const isConvex = backend === "convex";
+  const isPocketBase = backend === "pocketbase";
   const hasReactRouter = frontend.includes("react-router");
   const hasNative = frontend.some((f) =>
     ["native-bare", "native-uniwind", "native-unistyles"].includes(f),
@@ -78,7 +79,21 @@ ${
 - Set \`CLERK_PUBLISHABLE_KEY\` in \`apps/*/.env\``
     : ""
 }`
-    : generateDatabaseSetup(options, packageManagerRunCmd)
+    : isPocketBase
+      ? `
+## PocketBase Setup
+
+This project uses [PocketBase](https://pocketbase.io) as its backend.
+
+1. Download the PocketBase binary from [pocketbase.io](https://pocketbase.io)
+2. Place the binary in the \`packages/backend/\` directory
+3. Start PocketBase:
+\`\`\`bash
+cd packages/backend && ./pocketbase serve
+\`\`\`
+4. Access the Admin UI at [http://127.0.0.1:8090/_/](http://127.0.0.1:8090/_/)
+`
+      : generateDatabaseSetup(options, packageManagerRunCmd)
 }
 
 Then, run the development server:
@@ -169,6 +184,13 @@ function generateRunningInstructions(
 
   if (isConvex) {
     instructions.push("Your app will connect to the Convex cloud backend automatically.");
+  } else if (backend === "pocketbase") {
+    instructions.push(
+      "The PocketBase API is running at [http://127.0.0.1:8090/api/](http://127.0.0.1:8090/api/).",
+    );
+    instructions.push(
+      "Access the PocketBase Admin UI at [http://127.0.0.1:8090/_/](http://127.0.0.1:8090/_/).",
+    );
   } else if (backend !== "none" && !isBackendSelf) {
     instructions.push("The API is running at [http://localhost:3000](http://localhost:3000).");
   }
@@ -185,7 +207,8 @@ function generateProjectStructure(config: ProjectConfig): string {
   const hasNative = frontend.some((f) =>
     ["native-bare", "native-uniwind", "native-unistyles"].includes(f),
   );
-  const hasDbPackage = !isConvex && database !== "none" && orm !== "none";
+  const hasDbPackage =
+    !isConvex && backend !== "pocketbase" && database !== "none" && orm !== "none";
 
   if (hasFrontend) {
     const frontendTypes: Record<string, string> = {
@@ -215,14 +238,16 @@ function generateProjectStructure(config: ProjectConfig): string {
     structure.push("│   ├── docs/        # Documentation site (Astro Starlight)");
   }
 
-  if (!isBackendSelf && backend !== "none" && !isConvex) {
+  const isPocketBase = backend === "pocketbase";
+
+  if (!isBackendSelf && backend !== "none" && !isConvex && !isPocketBase) {
     const backendName = (backend[0]?.toUpperCase() ?? "") + backend.slice(1);
     const apiName = api !== "none" ? api.toUpperCase() : "";
     const desc = apiName ? `${backendName}, ${apiName}` : backendName;
     structure.push(`│   └── server/      # Backend API (${desc})`);
   }
 
-  if (isConvex || backend !== "none") {
+  if (isConvex || isPocketBase || backend !== "none") {
     structure.push("├── packages/");
 
     if (isConvex) {
@@ -235,7 +260,11 @@ function generateProjectStructure(config: ProjectConfig): string {
       }
     }
 
-    if (!isConvex) {
+    if (isPocketBase) {
+      structure.push("│   ├── backend/     # PocketBase backend");
+    }
+
+    if (!isConvex && !isPocketBase) {
       if (api !== "none") {
         structure.push("│   ├── api/         # API layer / business logic");
       }
@@ -303,6 +332,7 @@ function generateFeaturesList(
 
   const backendFeatures: Record<string, string> = {
     convex: "- **Convex** - Reactive backend-as-a-service platform",
+    pocketbase: "- **PocketBase** - Open source backend in a single file",
     hono: "- **Hono** - Lightweight, performant server framework",
     express: "- **Express** - Fast, unopinionated web framework",
     fastify: "- **Fastify** - Fast, low-overhead web framework",
@@ -319,12 +349,12 @@ function generateFeaturesList(
     features.push("- **oRPC** - End-to-end type-safe APIs with OpenAPI integration");
   }
 
-  if (!isConvex && backend !== "none" && runtime !== "none") {
+  if (!isConvex && backend !== "pocketbase" && backend !== "none" && runtime !== "none") {
     const runtimeName = runtime === "bun" ? "Bun" : runtime === "node" ? "Node.js" : runtime;
     features.push(`- **${runtimeName}** - Runtime environment`);
   }
 
-  if (database !== "none" && !isConvex) {
+  if (database !== "none" && !isConvex && backend !== "pocketbase") {
     const ormNames: Record<string, string> = {
       drizzle: "Drizzle",
       prisma: "Prisma",
@@ -447,6 +477,8 @@ function generateScriptsList(
 
   if (isConvex) {
     scripts += `\n- \`${packageManagerRunCmd} dev:setup\`: Setup and configure your Convex project`;
+  } else if (backend === "pocketbase") {
+    scripts += `\n- \`${packageManagerRunCmd} dev:setup\`: Show PocketBase setup instructions`;
   } else if (backend !== "none" && !isBackendSelf) {
     scripts += `\n- \`${packageManagerRunCmd} dev:server\`: Start only the server`;
   }
