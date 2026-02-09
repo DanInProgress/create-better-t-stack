@@ -185,6 +185,9 @@ export function isFrontendAllowedWithBackend(
     if (incompatibleFrontends.includes(frontend)) return false;
   }
 
+  // PocketBase is compatible with all web and native frontends
+  // No frontend restrictions for PocketBase
+
   return true;
 }
 
@@ -207,6 +210,8 @@ export function isExampleTodoAllowed(
 ) {
   // Convex handles its own data layer, no need for database or API
   if (backend === "convex") return true;
+  // PocketBase handles its own data layer, no need for database or API
+  if (backend === "pocketbase") return true;
   // Todo requires both database and API to communicate
   if (database === "none" || api === "none") return false;
   return true;
@@ -216,6 +221,9 @@ export function isExampleAIAllowed(backend?: ProjectConfig["backend"], frontends
   const includesSolid = frontends.includes("solid");
   const includesAstro = frontends.includes("astro");
   if (includesSolid || includesAstro) return false;
+
+  // PocketBase does not support the AI example
+  if (backend === "pocketbase") return false;
 
   // Convex AI example only supports React-based frontends (not Svelte or Nuxt)
   if (backend === "convex") {
@@ -342,7 +350,7 @@ export function validateExamplesCompatibility(
   const examplesArr = examples ?? [];
   if (examplesArr.length === 0 || examplesArr.includes("none")) return Result.ok(undefined);
 
-  if (examplesArr.includes("todo") && backend !== "convex") {
+  if (examplesArr.includes("todo") && backend !== "convex" && backend !== "pocketbase") {
     if (database === "none") {
       return validationErr(
         "The 'todo' example requires a database. Cannot use --examples todo when database is 'none'.",
@@ -357,6 +365,13 @@ export function validateExamplesCompatibility(
 
   if (examplesArr.includes("ai") && (frontend ?? []).includes("solid")) {
     return validationErr("The 'ai' example is not compatible with the Solid frontend.");
+  }
+
+  // PocketBase does not support the AI example
+  if (examplesArr.includes("ai") && backend === "pocketbase") {
+    return validationErr(
+      "The 'ai' example is not compatible with PocketBase backend.",
+    );
   }
 
   // Convex AI example only supports React-based frontends
