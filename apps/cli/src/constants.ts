@@ -26,6 +26,7 @@ export const DEFAULT_CONFIG_BASE = {
   git: true,
   install: true,
   dbSetup: "none",
+  pbDeployment: "none",
   backend: "hono",
   runtime: "bun",
   api: "trpc",

@@ -9,6 +9,7 @@ import type {
   Frontend,
   ORM,
   PackageManager,
+  PBDeployment,
   Payments,
   ProjectConfig,
   Runtime,
@@ -32,6 +33,7 @@ import { getinstallChoice } from "./install";
 import { navigableGroup } from "./navigable-group";
 import { getORMChoice } from "./orm";
 import { getPackageManagerChoice } from "./package-manager";
+import { getPBDeploymentChoice } from "./pb-deployment";
 import { getPaymentsChoice } from "./payments";
 import { getRuntimeChoice } from "./runtime";
 import { getServerDeploymentChoice } from "./server-deploy";
@@ -49,6 +51,7 @@ type PromptGroupResults = {
   addons: Addons[];
   examples: Examples[];
   dbSetup: DatabaseSetup;
+  pbDeployment: PBDeployment;
   git: boolean;
   packageManager: PackageManager;
   install: boolean;
@@ -80,6 +83,7 @@ export async function gatherConfig(
       packageManager: flags.packageManager ?? DEFAULT_CONFIG.packageManager,
       install: flags.install ?? DEFAULT_CONFIG.install,
       dbSetup: flags.dbSetup ?? DEFAULT_CONFIG.dbSetup,
+      pbDeployment: flags.pbDeployment ?? DEFAULT_CONFIG.pbDeployment,
       api: flags.api ?? DEFAULT_CONFIG.api,
       webDeploy: flags.webDeploy ?? DEFAULT_CONFIG.webDeploy,
       serverDeploy: flags.serverDeploy ?? DEFAULT_CONFIG.serverDeploy,
@@ -123,6 +127,8 @@ export async function gatherConfig(
           results.backend,
           results.runtime,
         ),
+      pbDeployment: ({ results }) =>
+        getPBDeploymentChoice(results.backend, flags.pbDeployment),
       webDeploy: ({ results }) =>
         getDeploymentChoice(flags.webDeploy, results.runtime, results.backend, results.frontend),
       serverDeploy: ({ results }) =>
@@ -160,6 +166,7 @@ export async function gatherConfig(
     packageManager: result.packageManager,
     install: result.install,
     dbSetup: result.dbSetup,
+    pbDeployment: result.pbDeployment,
     api: result.api,
     webDeploy: result.webDeploy,
     serverDeploy: result.serverDeploy,

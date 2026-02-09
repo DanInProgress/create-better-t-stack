@@ -10,6 +10,7 @@ import type {
   ExamplesSchema,
   PackageManagerSchema,
   DatabaseSetupSchema,
+  PBDeploymentSchema,
   APISchema,
   AuthSchema,
   PaymentsSchema,
@@ -36,6 +37,7 @@ export type Addons = z.infer<typeof AddonsSchema>;
 export type Examples = z.infer<typeof ExamplesSchema>;
 export type PackageManager = z.infer<typeof PackageManagerSchema>;
 export type DatabaseSetup = z.infer<typeof DatabaseSetupSchema>;
+export type PBDeployment = z.infer<typeof PBDeploymentSchema>;
 export type API = z.infer<typeof APISchema>;
 export type Auth = z.infer<typeof AuthSchema>;
 export type Payments = z.infer<typeof PaymentsSchema>;

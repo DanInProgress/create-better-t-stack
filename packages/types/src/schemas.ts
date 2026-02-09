@@ -7,7 +7,7 @@ export const DatabaseSchema = z
 export const ORMSchema = z.enum(["drizzle", "prisma", "mongoose", "none"]).describe("ORM type");
 
 export const BackendSchema = z
-  .enum(["hono", "express", "fastify", "elysia", "convex", "self", "none"])
+  .enum(["hono", "express", "fastify", "elysia", "convex", "pocketbase", "self", "none"])
   .describe("Backend framework");
 
 export const RuntimeSchema = z
@@ -71,6 +71,10 @@ export const DatabaseSetupSchema = z
   ])
   .describe("Database hosting setup");
 
+export const PBDeploymentSchema = z
+  .enum(["self-hosted", "pockethost", "none"])
+  .describe("PocketBase deployment option");
+
 export const APISchema = z.enum(["trpc", "orpc", "none"]).describe("API type");
 
 export const AuthSchema = z
@@ -124,6 +128,7 @@ export const CreateInputSchema = z.object({
   packageManager: PackageManagerSchema.optional(),
   install: z.boolean().optional(),
   dbSetup: DatabaseSetupSchema.optional(),
+  pbDeployment: PBDeploymentSchema.optional(),
   backend: BackendSchema.optional(),
   runtime: RuntimeSchema.optional(),
   api: APISchema.optional(),
@@ -165,6 +170,7 @@ export const ProjectConfigSchema = z.object({
   packageManager: PackageManagerSchema,
   install: z.boolean(),
   dbSetup: DatabaseSetupSchema,
+  pbDeployment: PBDeploymentSchema,
   api: APISchema,
   webDeploy: WebDeploySchema,
   serverDeploy: ServerDeploySchema,
@@ -185,6 +191,7 @@ export const BetterTStackConfigSchema = z.object({
   payments: PaymentsSchema,
   packageManager: PackageManagerSchema,
   dbSetup: DatabaseSetupSchema,
+  pbDeployment: PBDeploymentSchema,
   api: APISchema,
   webDeploy: WebDeploySchema,
   serverDeploy: ServerDeploySchema,
@@ -221,6 +228,7 @@ export const ADDONS_VALUES = AddonsSchema.options;
 export const EXAMPLES_VALUES = ExamplesSchema.options;
 export const PACKAGE_MANAGER_VALUES = PackageManagerSchema.options;
 export const DATABASE_SETUP_VALUES = DatabaseSetupSchema.options;
+export const PB_DEPLOYMENT_VALUES = PBDeploymentSchema.options;
 export const API_VALUES = APISchema.options;
 export const AUTH_VALUES = AuthSchema.options;
 export const PAYMENTS_VALUES = PaymentsSchema.options;
