@@ -22,6 +22,7 @@ describe("Backend and Runtime Combinations", () => {
 
       // Special cases
       { backend: "convex" as const, runtime: "none" as const },
+      { backend: "pocketbase" as const, runtime: "none" as const },
       { backend: "none" as const, runtime: "none" as const },
       { backend: "self" as const, runtime: "none" as const },
     ];
@@ -46,6 +47,11 @@ describe("Backend and Runtime Combinations", () => {
           config.database = "none";
           config.orm = "none";
           config.auth = "clerk";
+          config.api = "none";
+        } else if (backend === "pocketbase") {
+          config.database = "none";
+          config.orm = "none";
+          config.auth = "pocketbase-auth";
           config.api = "none";
         } else if (backend === "none") {
           config.database = "none";
@@ -112,6 +118,23 @@ describe("Backend and Runtime Combinations", () => {
         error: "Convex backend requires '--runtime none'",
       },
 
+      // PocketBase backend requires runtime none
+      {
+        backend: "pocketbase",
+        runtime: "bun",
+        error: "PocketBase backend requires '--runtime none'",
+      },
+      {
+        backend: "pocketbase",
+        runtime: "node",
+        error: "PocketBase backend requires '--runtime none'",
+      },
+      {
+        backend: "pocketbase",
+        runtime: "workers",
+        error: "PocketBase backend requires '--runtime none'",
+      },
+
       // Backend none requires runtime none
       {
         backend: "none",
@@ -149,18 +172,18 @@ describe("Backend and Runtime Combinations", () => {
         frontend: ["next"], // Need to specify Next.js frontend for self backend
       },
 
-      // Runtime none only works with convex, none, or self backend
+      // Runtime none only works with convex, pocketbase, none, or self backend
       {
         backend: "hono",
         runtime: "none",
         error:
-          "'--runtime none' is only supported with '--backend convex', '--backend none', or '--backend self'",
+          "'--runtime none' is only supported with '--backend convex', '--backend pocketbase', '--backend none', or '--backend self'",
       },
       {
         backend: "express",
         runtime: "none",
         error:
-          "'--runtime none' is only supported with '--backend convex', '--backend none', or '--backend self'",
+          "'--runtime none' is only supported with '--backend convex', '--backend pocketbase', '--backend none', or '--backend self'",
       },
     ];
 
@@ -186,6 +209,11 @@ describe("Backend and Runtime Combinations", () => {
           config.database = "none";
           config.orm = "none";
           config.auth = "clerk";
+          config.api = "none";
+        } else if (backend === "pocketbase") {
+          config.database = "none";
+          config.orm = "none";
+          config.auth = "pocketbase-auth";
           config.api = "none";
         } else if (backend === "none") {
           config.database = "none";
@@ -274,6 +302,71 @@ describe("Backend and Runtime Combinations", () => {
     });
   });
 
+  describe("PocketBase Backend Constraints", () => {
+    it("should enforce all pocketbase constraints", async () => {
+      const result = await runTRPCTest({
+        projectName: "pocketbase-app",
+        backend: "pocketbase",
+        runtime: "none",
+        database: "none",
+        orm: "none",
+        auth: "pocketbase-auth",
+        api: "none",
+        frontend: ["tanstack-router"],
+        addons: ["none"],
+        examples: ["none"],
+        dbSetup: "none",
+        webDeploy: "none",
+        serverDeploy: "none",
+        install: false,
+      });
+
+      expectSuccess(result);
+    });
+
+    it("should work pocketbase with auth none", async () => {
+      const result = await runTRPCTest({
+        projectName: "pocketbase-no-auth",
+        backend: "pocketbase",
+        runtime: "none",
+        database: "none",
+        orm: "none",
+        auth: "none",
+        api: "none",
+        frontend: ["tanstack-router"],
+        addons: ["none"],
+        examples: ["none"],
+        dbSetup: "none",
+        webDeploy: "none",
+        serverDeploy: "none",
+        install: false,
+      });
+
+      expectSuccess(result);
+    });
+
+    it("should fail pocketbase with database", async () => {
+      const result = await runTRPCTest({
+        projectName: "pocketbase-with-db",
+        backend: "pocketbase",
+        runtime: "none",
+        database: "postgres",
+        orm: "drizzle",
+        auth: "pocketbase-auth",
+        api: "none",
+        frontend: ["tanstack-router"],
+        addons: ["none"],
+        examples: ["none"],
+        dbSetup: "none",
+        webDeploy: "none",
+        serverDeploy: "none",
+        expectError: true,
+      });
+
+      expectError(result, "PocketBase backend requires '--database none'");
+    });
+  });
+
   describe("Workers Runtime Constraints", () => {
     it("should work with workers + hono + compatible database", async () => {
       const result = await runTRPCTest({
@@ -343,7 +436,16 @@ describe("Backend and Runtime Combinations", () => {
   });
 
   describe("All Backend Types", () => {
-    const backends = ["hono", "express", "fastify", "elysia", "convex", "none", "self"] as const;
+    const backends = [
+      "hono",
+      "express",
+      "fastify",
+      "elysia",
+      "convex",
+      "pocketbase",
+      "none",
+      "self",
+    ] as const;
 
     for (const backend of backends) {
       it(`should work with appropriate defaults for ${backend}`, async () => {
@@ -366,6 +468,13 @@ describe("Backend and Runtime Combinations", () => {
             config.database = "none";
             config.orm = "none";
             config.auth = "clerk";
+            config.api = "none";
+            break;
+          case "pocketbase":
+            config.runtime = "none";
+            config.database = "none";
+            config.orm = "none";
+            config.auth = "pocketbase-auth";
             config.api = "none";
             break;
           case "none":

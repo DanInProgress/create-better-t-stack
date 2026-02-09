@@ -10136,6 +10136,380 @@ export const startInstance = createStart(() => {
 		requestMiddleware: [clerkMiddleware()],
 	}
 })`],
+  ["auth/pocketbase-auth/pocketbase/backend/pb_hooks.js.hbs", `// PocketBase JavaScript hooks
+// See: https://pocketbase.io/docs/js-overview/
+
+// Example: Extend auth with custom logic
+// onRecordAuthRequest((e) => {
+//   console.log("Auth request:", e.record?.email())
+//   e.next()
+// })
+`],
+  ["auth/pocketbase-auth/pocketbase/web/react/next/src/app/dashboard/page.tsx.hbs", `"use client";
+
+import SignInForm from "@/components/sign-in-form";
+import SignUpForm from "@/components/sign-up-form";
+import UserMenu from "@/components/user-menu";
+import pb from "@/lib/pocketbase";
+import { useState, useEffect } from "react";
+
+export default function DashboardPage() {
+	const [showSignIn, setShowSignIn] = useState(false);
+	const [isValid, setIsValid] = useState(pb.authStore.isValid);
+
+	useEffect(() => {
+		const unsubscribe = pb.authStore.onChange(() => {
+			setIsValid(pb.authStore.isValid);
+		});
+		return () => unsubscribe();
+	}, []);
+
+	if (!isValid) {
+		return showSignIn ? (
+			<SignInForm onSwitchToSignUp={() => setShowSignIn(false)} />
+		) : (
+			<SignUpForm onSwitchToSignIn={() => setShowSignIn(true)} />
+		);
+	}
+
+	return (
+		<div>
+			<h1>Dashboard</h1>
+			<p>Welcome, {pb.authStore.record?.name || pb.authStore.record?.email}</p>
+			<UserMenu />
+		</div>
+	);
+}
+`],
+  ["auth/pocketbase-auth/pocketbase/web/react/next/src/components/sign-in-form.tsx.hbs", `"use client";
+
+import pb from "@/lib/pocketbase";
+import { useForm } from "@tanstack/react-form";
+import { toast } from "sonner";
+import z from "zod";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { useRouter } from "next/navigation";
+
+export default function SignInForm({
+	onSwitchToSignUp,
+}: {
+	onSwitchToSignUp: () => void;
+}) {
+	const router = useRouter();
+
+	const form = useForm({
+		defaultValues: {
+			email: "",
+			password: "",
+		},
+		onSubmit: async ({ value }) => {
+			try {
+				await pb.collection("users").authWithPassword(value.email, value.password);
+				router.push("/dashboard");
+				toast.success("Sign in successful");
+			} catch (error) {
+				toast.error(error instanceof Error ? error.message : "Failed to sign in");
+			}
+		},
+		validators: {
+			onSubmit: z.object({
+				email: z.email("Invalid email address"),
+				password: z.string().min(8, "Password must be at least 8 characters"),
+			}),
+		},
+	});
+
+	return (
+		<div className="mx-auto w-full mt-10 max-w-md p-6">
+			<h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
+
+			<form
+				onSubmit={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					form.handleSubmit();
+				}}
+				className="space-y-4"
+			>
+				<div>
+					<form.Field name="email">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor={field.name}>Email</Label>
+								<Input
+									id={field.name}
+									name={field.name}
+									type="email"
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+								/>
+								{field.state.meta.errors.map((error) => (
+									<p key={error?.message} className="text-red-500">
+										{error?.message}
+									</p>
+								))}
+							</div>
+						)}
+					</form.Field>
+				</div>
+
+				<div>
+					<form.Field name="password">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor={field.name}>Password</Label>
+								<Input
+									id={field.name}
+									name={field.name}
+									type="password"
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+								/>
+								{field.state.meta.errors.map((error) => (
+									<p key={error?.message} className="text-red-500">
+										{error?.message}
+									</p>
+								))}
+							</div>
+						)}
+					</form.Field>
+				</div>
+
+				<form.Subscribe>
+					{(state) => (
+						<Button
+							type="submit"
+							className="w-full"
+							disabled={!state.canSubmit || state.isSubmitting}
+						>
+							{state.isSubmitting ? "Signing in..." : "Sign In"}
+						</Button>
+					)}
+				</form.Subscribe>
+			</form>
+
+			<div className="mt-4 text-center">
+				<Button
+					variant="link"
+					onClick={onSwitchToSignUp}
+					className="text-indigo-600 hover:text-indigo-800"
+				>
+					Need an account? Sign Up
+				</Button>
+			</div>
+		</div>
+	);
+}
+`],
+  ["auth/pocketbase-auth/pocketbase/web/react/next/src/components/sign-up-form.tsx.hbs", `"use client";
+
+import pb from "@/lib/pocketbase";
+import { useForm } from "@tanstack/react-form";
+import { toast } from "sonner";
+import z from "zod";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { useRouter } from "next/navigation";
+
+export default function SignUpForm({
+	onSwitchToSignIn,
+}: {
+	onSwitchToSignIn: () => void;
+}) {
+	const router = useRouter();
+
+	const form = useForm({
+		defaultValues: {
+			name: "",
+			email: "",
+			password: "",
+		},
+		onSubmit: async ({ value }) => {
+			try {
+				await pb.collection("users").create({
+					name: value.name,
+					email: value.email,
+					password: value.password,
+					passwordConfirm: value.password,
+				});
+				await pb.collection("users").authWithPassword(value.email, value.password);
+				router.push("/dashboard");
+				toast.success("Account created successfully");
+			} catch (error) {
+				toast.error(error instanceof Error ? error.message : "Failed to create account");
+			}
+		},
+		validators: {
+			onSubmit: z.object({
+				name: z.string().min(2, "Name must be at least 2 characters"),
+				email: z.email("Invalid email address"),
+				password: z.string().min(8, "Password must be at least 8 characters"),
+			}),
+		},
+	});
+
+	return (
+		<div className="mx-auto w-full mt-10 max-w-md p-6">
+			<h1 className="mb-6 text-center text-3xl font-bold">Create Account</h1>
+
+			<form
+				onSubmit={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					form.handleSubmit();
+				}}
+				className="space-y-4"
+			>
+				<div>
+					<form.Field name="name">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor={field.name}>Name</Label>
+								<Input
+									id={field.name}
+									name={field.name}
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+								/>
+								{field.state.meta.errors.map((error) => (
+									<p key={error?.message} className="text-red-500">
+										{error?.message}
+									</p>
+								))}
+							</div>
+						)}
+					</form.Field>
+				</div>
+
+				<div>
+					<form.Field name="email">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor={field.name}>Email</Label>
+								<Input
+									id={field.name}
+									name={field.name}
+									type="email"
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+								/>
+								{field.state.meta.errors.map((error) => (
+									<p key={error?.message} className="text-red-500">
+										{error?.message}
+									</p>
+								))}
+							</div>
+						)}
+					</form.Field>
+				</div>
+
+				<div>
+					<form.Field name="password">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor={field.name}>Password</Label>
+								<Input
+									id={field.name}
+									name={field.name}
+									type="password"
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+								/>
+								{field.state.meta.errors.map((error) => (
+									<p key={error?.message} className="text-red-500">
+										{error?.message}
+									</p>
+								))}
+							</div>
+						)}
+					</form.Field>
+				</div>
+
+				<form.Subscribe>
+					{(state) => (
+						<Button
+							type="submit"
+							className="w-full"
+							disabled={!state.canSubmit || state.isSubmitting}
+						>
+							{state.isSubmitting ? "Creating account..." : "Sign Up"}
+						</Button>
+					)}
+				</form.Subscribe>
+			</form>
+
+			<div className="mt-4 text-center">
+				<Button
+					variant="link"
+					onClick={onSwitchToSignIn}
+					className="text-indigo-600 hover:text-indigo-800"
+				>
+					Already have an account? Sign In
+				</Button>
+			</div>
+		</div>
+	);
+}
+`],
+  ["auth/pocketbase-auth/pocketbase/web/react/next/src/components/user-menu.tsx.hbs", `"use client";
+
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import pb from "@/lib/pocketbase";
+import { Button } from "./ui/button";
+import { useRouter } from "next/navigation";
+
+export default function UserMenu() {
+	const router = useRouter();
+	const user = pb.authStore.record;
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger render={<Button variant="outline" />}>
+				{user?.name || user?.email}
+			</DropdownMenuTrigger>
+			<DropdownMenuContent className="bg-card">
+				<DropdownMenuGroup>
+					<DropdownMenuLabel>My Account</DropdownMenuLabel>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem>{user?.email}</DropdownMenuItem>
+					<DropdownMenuItem
+						variant="destructive"
+						onClick={() => {
+							pb.authStore.clear();
+							router.push("/dashboard");
+						}}
+					>
+						Sign Out
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+`],
+  ["auth/pocketbase-auth/pocketbase/web/react/next/src/lib/pocketbase.ts.hbs", `import PocketBase from "pocketbase";
+import { env } from "@{{projectName}}/env/web";
+
+const pb = new PocketBase(env.NEXT_PUBLIC_POCKETBASE_URL);
+
+export default pb;
+`],
   ["backend/convex/packages/backend/_gitignore", `
 .env.local
 `],
@@ -10307,6 +10681,72 @@ export default defineSchema({
   },
   "dependencies": {}
 }
+`],
+  ["backend/pocketbase/packages/backend/_gitignore", `pb_data/
+`],
+  ["backend/pocketbase/packages/backend/package.json.hbs", `{
+  "name": "@{{projectName}}/backend",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "echo 'Run PocketBase with: ./pocketbase serve'",
+    "dev:setup": "echo 'Download PocketBase from https://pocketbase.io/docs/ and run: ./pocketbase serve'"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "PocketBase backend configuration",
+  "dependencies": {}
+}
+`],
+  ["backend/pocketbase/packages/backend/pb_schema.json.hbs", `[
+{{#if (includes examples "todo")}}
+  {
+    "name": "todos",
+    "type": "base",
+    "schema": [
+      {
+        "name": "text",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "completed",
+        "type": "bool",
+        "required": true
+      }
+    ]
+  },
+{{/if}}
+  {
+    "name": "health",
+    "type": "base",
+    "schema": [
+      {
+        "name": "status",
+        "type": "text",
+        "required": true
+      }
+    ]
+  }
+]
+`],
+  ["backend/pocketbase/packages/backend/README.md", `# PocketBase Backend
+
+## Setup
+
+1. Download PocketBase from [pocketbase.io](https://pocketbase.io/docs/)
+2. Place the \`pocketbase\` binary in this directory
+3. Run \`./pocketbase serve\`
+4. Access the Admin UI at \`http://127.0.0.1:8090/_/\`
+
+## Development
+
+- API endpoint: \`http://127.0.0.1:8090/api/\`
+- Admin UI: \`http://127.0.0.1:8090/_/\`
+- Import \`pb_schema.json\` via Admin UI > Settings > Import collections
+
+## Deployment
+
+Deploy to [PocketHost](https://pockethost.io) for managed PocketBase hosting.
 `],
   ["backend/server/base/_gitignore", `# prod
 dist/
@@ -15834,6 +16274,141 @@ export default function TodosScreen() {
     </Container>
   );
 }`],
+  ["examples/todo/pocketbase/web/react/next/src/components/todo-list.tsx.hbs", `"use client";
+
+import pb from "@/lib/pocketbase";
+import { useState, useEffect, useCallback } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+
+interface Todo {
+	id: string;
+	text: string;
+	completed: boolean;
+}
+
+export default function TodoList() {
+	const [todos, setTodos] = useState<Todo[]>([]);
+	const [newTodo, setNewTodo] = useState("");
+	const [isLoading, setIsLoading] = useState(true);
+
+	const fetchTodos = useCallback(async () => {
+		try {
+			const records = await pb.collection("todos").getFullList<Todo>({
+				sort: "-created",
+			});
+			setTodos(records);
+		} catch (error) {
+			console.error("Failed to fetch todos:", error);
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		fetchTodos();
+	}, [fetchTodos]);
+
+	async function handleCreate(e: React.FormEvent) {
+		e.preventDefault();
+		if (!newTodo.trim()) return;
+
+		try {
+			await pb.collection("todos").create({
+				text: newTodo.trim(),
+				completed: false,
+			});
+			setNewTodo("");
+			await fetchTodos();
+		} catch (error) {
+			console.error("Failed to create todo:", error);
+		}
+	}
+
+	async function handleToggle(todo: Todo) {
+		try {
+			await pb.collection("todos").update(todo.id, {
+				completed: !todo.completed,
+			});
+			await fetchTodos();
+		} catch (error) {
+			console.error("Failed to toggle todo:", error);
+		}
+	}
+
+	async function handleDelete(id: string) {
+		try {
+			await pb.collection("todos").delete(id);
+			await fetchTodos();
+		} catch (error) {
+			console.error("Failed to delete todo:", error);
+		}
+	}
+
+	if (isLoading) {
+		return <div className="text-center p-4">Loading todos...</div>;
+	}
+
+	return (
+		<div className="mx-auto w-full max-w-md p-6">
+			<h2 className="mb-4 text-2xl font-bold">Todos</h2>
+
+			<form onSubmit={handleCreate} className="mb-4 flex gap-2">
+				<Input
+					value={newTodo}
+					onChange={(e) => setNewTodo(e.target.value)}
+					placeholder="Add a new todo..."
+					className="flex-1"
+				/>
+				<Button type="submit" disabled={!newTodo.trim()}>
+					Add
+				</Button>
+			</form>
+
+			<ul className="space-y-2">
+				{todos.map((todo) => (
+					<li
+						key={todo.id}
+						className="flex items-center gap-2 rounded border p-2"
+					>
+						<input
+							type="checkbox"
+							checked={todo.completed}
+							onChange={() => handleToggle(todo)}
+							className="h-4 w-4"
+						/>
+						<span
+							className={\`flex-1 \${todo.completed ? "line-through opacity-50" : ""}\`}
+						>
+							{todo.text}
+						</span>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => handleDelete(todo.id)}
+						>
+							Delete
+						</Button>
+					</li>
+				))}
+			</ul>
+
+			{todos.length === 0 && (
+				<p className="text-center text-muted-foreground">
+					No todos yet. Add one above!
+				</p>
+			)}
+		</div>
+	);
+}
+`],
+  ["examples/todo/pocketbase/web/react/next/src/lib/pocketbase.ts.hbs", `import PocketBase from "pocketbase";
+import { env } from "@{{projectName}}/env/web";
+
+const pb = new PocketBase(env.NEXT_PUBLIC_POCKETBASE_URL);
+
+export default pb;
+`],
   ["examples/todo/server/drizzle/base/src/routers/todo.ts.hbs", `{{#if (eq api "orpc")}}
 import { eq } from "drizzle-orm";
 import z from "zod";
@@ -25634,4 +26209,4 @@ function SuccessPage() {
 `]
 ]);
 
-export const TEMPLATE_COUNT = 435;
+export const TEMPLATE_COUNT = 447;

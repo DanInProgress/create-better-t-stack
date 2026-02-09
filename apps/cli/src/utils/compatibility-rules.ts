@@ -369,9 +369,7 @@ export function validateExamplesCompatibility(
 
   // PocketBase does not support the AI example
   if (examplesArr.includes("ai") && backend === "pocketbase") {
-    return validationErr(
-      "The 'ai' example is not compatible with PocketBase backend.",
-    );
+    return validationErr("The 'ai' example is not compatible with PocketBase backend.");
   }
 
   // Convex AI example only supports React-based frontends
