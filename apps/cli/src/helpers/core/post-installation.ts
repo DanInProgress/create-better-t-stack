@@ -34,6 +34,7 @@ export async function displayPostInstallInstructions(
   } = config;
 
   const isConvex = backend === "convex";
+  const isPocketBase = backend === "pocketbase";
   const isBackendSelf = backend === "self";
   const runCmd =
     packageManager === "npm" ? "npm run" : packageManager === "pnpm" ? "pnpm run" : "bun run";
@@ -47,7 +48,7 @@ export async function displayPostInstallInstructions(
     addons?.includes("oxlint");
 
   const databaseInstructions =
-    !isConvex && database !== "none"
+    !isConvex && !isPocketBase && database !== "none"
       ? await getDatabaseInstructions(
           database,
           orm,
@@ -80,6 +81,7 @@ export async function displayPostInstallInstructions(
     config.payments === "polar" && config.auth === "better-auth"
       ? getPolarInstructions(backend)
       : "";
+  const pocketBaseInstructions = isPocketBase ? getPocketBaseInstructions() : "";
   const alchemyDeployInstructions = getAlchemyDeployInstructions(
     runCmd,
     webDeploy,
@@ -114,7 +116,8 @@ export async function displayPostInstallInstructions(
 
   const bunWebNativeWarning =
     packageManager === "bun" && hasNative && hasWeb ? getBunWebNativeWarning() : "";
-  const noOrmWarning = !isConvex && database !== "none" && orm === "none" ? getNoOrmWarning() : "";
+  const noOrmWarning =
+    !isConvex && !isPocketBase && database !== "none" && orm === "none" ? getNoOrmWarning() : "";
 
   let output = `${pc.bold("Next steps")}\n${pc.cyan("1.")} ${cdCmd}\n`;
   let stepCounter = 2;
@@ -123,13 +126,15 @@ export async function displayPostInstallInstructions(
     output += `${pc.cyan(`${stepCounter++}.`)} ${packageManager} install\n`;
   }
 
-  if (database === "sqlite" && dbSetup !== "d1") {
+  if (database === "sqlite" && dbSetup !== "d1" && !isPocketBase) {
     output += `${pc.cyan(`${stepCounter++}.`)} ${runCmd} db:local\n${pc.dim(
       "   (optional - starts local SQLite database)",
     )}\n`;
   }
 
-  if (isConvex) {
+  if (isPocketBase) {
+    output += `${pc.cyan(`${stepCounter++}.`)} ${runCmd} dev\n`;
+  } else if (isConvex) {
     output += `${pc.cyan(`${stepCounter++}.`)} ${runCmd} dev:setup\n${pc.dim(
       "   (this will guide you through Convex project setup)",
     )}\n`;
@@ -170,7 +175,10 @@ export async function displayPostInstallInstructions(
       )} You are creating a backend-only app\n   (no frontend selected)\n`;
     }
 
-    if (!isConvex && !isBackendSelf && hasStandaloneBackend) {
+    if (isPocketBase) {
+      output += `${pc.cyan("•")} PocketBase API: http://127.0.0.1:8090/api/\n`;
+      output += `${pc.cyan("•")} PocketBase Admin UI: http://127.0.0.1:8090/_/\n`;
+    } else if (!isConvex && !isBackendSelf && hasStandaloneBackend) {
       output += `${pc.cyan("•")} Backend API: http://localhost:3000\n`;
 
       if (api === "orpc") {
@@ -203,6 +211,7 @@ export async function displayPostInstallInstructions(
   if (clerkInstructions) output += `\n${clerkInstructions.trim()}\n`;
   if (betterAuthConvexInstructions) output += `\n${betterAuthConvexInstructions.trim()}\n`;
   if (polarInstructions) output += `\n${polarInstructions.trim()}\n`;
+  if (pocketBaseInstructions) output += `\n${pocketBaseInstructions.trim()}\n`;
 
   if (noOrmWarning) output += `\n${noOrmWarning.trim()}\n`;
   if (bunWebNativeWarning) output += `\n${bunWebNativeWarning.trim()}\n`;
@@ -413,6 +422,16 @@ function getBetterAuthConvexInstructions(hasWeb: boolean, webPort: string, packa
 function getPolarInstructions(backend: Backend) {
   const envPath = backend === "self" ? "apps/web/.env" : "apps/server/.env";
   return `${pc.bold("Polar Payments Setup:")}\n${pc.cyan("•")} Get access token & product ID from ${pc.underline("https://sandbox.polar.sh/")}\n${pc.cyan("•")} Set POLAR_ACCESS_TOKEN in ${envPath}`;
+}
+
+function getPocketBaseInstructions() {
+  return (
+    `${pc.bold("PocketBase Setup:")}\n` +
+    `${pc.cyan("•")} Download PocketBase from ${pc.underline("https://pocketbase.io")}\n` +
+    `${pc.cyan("•")} Place the binary in ${pc.white("packages/backend/")}\n` +
+    `${pc.cyan("•")} Run: ${pc.white("./pocketbase serve")}\n` +
+    `${pc.cyan("•")} Admin UI: ${pc.underline("http://127.0.0.1:8090/_/")}`
+  );
 }
 
 function getAlchemyDeployInstructions(
