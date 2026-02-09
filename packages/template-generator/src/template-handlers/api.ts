@@ -10,7 +10,7 @@ export async function processApiTemplates(
   config: ProjectConfig,
 ): Promise<void> {
   if (config.api === "none") return;
-  if (config.backend === "convex") return;
+  if (config.backend === "convex" || config.backend === "pocketbase") return;
 
   processTemplatesFromPrefix(vfs, templates, `api/${config.api}/server`, "packages/api", config);
 
