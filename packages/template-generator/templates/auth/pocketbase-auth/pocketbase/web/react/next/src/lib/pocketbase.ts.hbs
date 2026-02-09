@@ -1,0 +1,6 @@
+import PocketBase from "pocketbase";
+import { env } from "@{{projectName}}/env/web";
+
+const pb = new PocketBase(env.NEXT_PUBLIC_POCKETBASE_URL);
+
+export default pb;
