@@ -22,6 +22,17 @@ export async function processBackendTemplates(
     return;
   }
 
+  if (config.backend === "pocketbase") {
+    processTemplatesFromPrefix(
+      vfs,
+      templates,
+      "backend/pocketbase/packages/backend",
+      "packages/backend",
+      config,
+    );
+    return;
+  }
+
   if (config.backend === "self") return;
 
   processTemplatesFromPrefix(vfs, templates, "backend/server/base", "apps/server", config);
