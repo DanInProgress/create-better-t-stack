@@ -37,6 +37,11 @@ export function processApiDeps(vfs: VirtualFileSystem, config: ProjectConfig): v
     return;
   }
 
+  if (backend === "pocketbase") {
+    addPocketBaseDeps(vfs, frontend, frontendType);
+    return;
+  }
+
   if (api === "none") return;
 
   addApiPackageDeps(vfs, api, backend, frontend, auth);
@@ -286,5 +291,26 @@ function addConvexDeps(
 
   if (nativeExists && frontendType.hasNative) {
     addPackageDependency({ vfs, packagePath: nativePath, dependencies: ["convex"] });
+  }
+}
+
+function addPocketBaseDeps(
+  vfs: VirtualFileSystem,
+  _frontend: Frontend[],
+  frontendType: FrontendType,
+): void {
+  const webPath = "apps/web/package.json";
+  const nativePath = "apps/native/package.json";
+  const webExists = vfs.exists(webPath);
+  const nativeExists = vfs.exists(nativePath);
+
+  // Add pocketbase SDK to frontend apps
+  if (webExists) {
+    addPackageDependency({ vfs, packagePath: webPath, dependencies: ["pocketbase"] });
+  }
+
+  // Add pocketbase SDK to native apps (React Native requires AsyncAuthStore)
+  if (nativeExists && frontendType.hasNative) {
+    addPackageDependency({ vfs, packagePath: nativePath, dependencies: ["pocketbase"] });
   }
 }
