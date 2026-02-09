@@ -13,6 +13,23 @@ export async function getAuthChoice(
   if (backend === "none") {
     return "none" as Auth;
   }
+  if (backend === "pocketbase") {
+    const response = await navigableSelect({
+      message: "Select authentication provider",
+      options: [
+        {
+          value: "pocketbase-auth",
+          label: "PocketBase Auth",
+          hint: "Built-in email/password, OAuth2 providers",
+        },
+        { value: "none", label: "None", hint: "No auth" },
+      ],
+      initialValue: "pocketbase-auth",
+    });
+    if (isCancel(response)) throw new UserCancelledError({ message: "Operation cancelled" });
+    return response as Auth;
+  }
+
   if (backend === "convex") {
     const supportedBetterAuthFrontends = frontend?.some((f) =>
       [

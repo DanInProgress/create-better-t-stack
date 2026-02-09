@@ -5,7 +5,12 @@ import { UserCancelledError } from "../utils/errors";
 import { isCancel, navigableSelect } from "./navigable";
 
 export async function getRuntimeChoice(runtime?: Runtime, backend?: Backend) {
-  if (backend === "convex" || backend === "none" || backend === "self") {
+  if (
+    backend === "convex" ||
+    backend === "pocketbase" ||
+    backend === "none" ||
+    backend === "self"
+  ) {
     return "none";
   }
 

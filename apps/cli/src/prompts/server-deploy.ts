@@ -34,7 +34,7 @@ export async function getServerDeploymentChoice(
 ) {
   if (deployment !== undefined) return deployment;
 
-  if (backend === "none" || backend === "convex") {
+  if (backend === "none" || backend === "convex" || backend === "pocketbase") {
     return "none";
   }
 

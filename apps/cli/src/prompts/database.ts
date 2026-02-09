@@ -5,7 +5,7 @@ import { UserCancelledError } from "../utils/errors";
 import { isCancel, navigableSelect } from "./navigable";
 
 export async function getDatabaseChoice(database?: Database, backend?: Backend, runtime?: Runtime) {
-  if (backend === "convex" || backend === "none") {
+  if (backend === "convex" || backend === "pocketbase" || backend === "none") {
     return "none";
   }
 
