@@ -37,6 +37,19 @@ export function processApiDeps(vfs: VirtualFileSystem, config: ProjectConfig): v
     return;
   }
 
+  // PocketBase: Add SDK to web app
+  if (backend === "pocketbase") {
+    const webPath = "apps/web/package.json";
+    if (vfs.exists(webPath)) {
+      addPackageDependency({
+        vfs,
+        packagePath: webPath,
+        dependencies: ["pocketbase"],
+      });
+    }
+    return;
+  }
+
   if (api === "none") return;
 
   addApiPackageDeps(vfs, api, backend, frontend, auth);

@@ -117,6 +117,8 @@ export const dependencyVersionMap = {
   "convex-vue": "^0.1.5",
   "@convex-dev/better-auth": "^0.10.9",
 
+  pocketbase: "^0.26.8",
+
   "@tanstack/svelte-query": "^5.85.3",
   "@tanstack/svelte-query-devtools": "^5.85.3",
 

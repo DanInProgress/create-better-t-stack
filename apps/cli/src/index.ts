@@ -300,6 +300,7 @@ export async function createVirtual(
     examples: options.examples || [],
     auth: options.auth || "none",
     payments: options.payments || "none",
+    pbDeployment: options.pbDeployment || "none",
     git: options.git ?? false,
     packageManager: options.packageManager || "bun",
     install: false,

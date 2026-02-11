@@ -7,7 +7,7 @@ export const DatabaseSchema = z
 export const ORMSchema = z.enum(["drizzle", "prisma", "mongoose", "none"]).describe("ORM type");
 
 export const BackendSchema = z
-  .enum(["hono", "express", "fastify", "elysia", "convex", "self", "none"])
+  .enum(["hono", "express", "fastify", "elysia", "convex", "pocketbase", "self", "none"])
   .describe("Backend framework");
 
 export const RuntimeSchema = z
@@ -87,6 +87,10 @@ export const DirectoryConflictSchema = z
   .enum(["merge", "overwrite", "increment", "error"])
   .describe("How to handle existing directory conflicts");
 
+export const PBDeploymentSchema = z
+  .enum(["self-hosted", "pockethost", "none"])
+  .describe("PocketBase deployment option");
+
 export const TemplateSchema = z
   .enum(["mern", "pern", "t3", "uniwind", "none"])
   .describe("Predefined project template");
@@ -133,6 +137,7 @@ export const CreateInputSchema = z.object({
   renderTitle: z.boolean().optional(),
   disableAnalytics: z.boolean().optional(),
   manualDb: z.boolean().optional(),
+  pbDeployment: PBDeploymentSchema.optional(),
 });
 
 export const AddInputSchema = z.object({
@@ -168,6 +173,7 @@ export const ProjectConfigSchema = z.object({
   api: APISchema,
   webDeploy: WebDeploySchema,
   serverDeploy: ServerDeploySchema,
+  pbDeployment: PBDeploymentSchema,
 });
 
 export const BetterTStackConfigSchema = z.object({
@@ -188,6 +194,7 @@ export const BetterTStackConfigSchema = z.object({
   api: APISchema,
   webDeploy: WebDeploySchema,
   serverDeploy: ServerDeploySchema,
+  pbDeployment: PBDeploymentSchema,
 });
 
 export const BetterTStackConfigFileSchema = z
@@ -228,3 +235,4 @@ export const WEB_DEPLOY_VALUES = WebDeploySchema.options;
 export const SERVER_DEPLOY_VALUES = ServerDeploySchema.options;
 export const DIRECTORY_CONFLICT_VALUES = DirectoryConflictSchema.options;
 export const TEMPLATE_VALUES = TemplateSchema.options;
+export const PB_DEPLOYMENT_VALUES = PBDeploymentSchema.options;

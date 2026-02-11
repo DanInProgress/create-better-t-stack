@@ -29,7 +29,7 @@ export async function getORMChoice(
   backend?: Backend,
   runtime?: Runtime,
 ) {
-  if (backend === "convex") {
+  if (backend === "convex" || backend === "pocketbase") {
     return "none";
   }
 

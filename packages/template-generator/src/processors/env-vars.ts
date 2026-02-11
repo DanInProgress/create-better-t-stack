@@ -70,6 +70,19 @@ function getConvexVar(frontend: string[]) {
   return "VITE_CONVEX_URL";
 }
 
+function getPocketBaseVar(frontend: string[]) {
+  const hasNextJs = frontend.includes("next");
+  const hasNuxt = frontend.includes("nuxt");
+  const hasSvelte = frontend.includes("svelte");
+  const hasTanstackStart = frontend.includes("tanstack-start");
+
+  if (hasNextJs) return "NEXT_PUBLIC_POCKETBASE_URL";
+  if (hasNuxt) return "NUXT_PUBLIC_POCKETBASE_URL";
+  if (hasSvelte) return "PUBLIC_POCKETBASE_URL";
+  if (hasTanstackStart) return "VITE_POCKETBASE_URL";
+  return "VITE_POCKETBASE_URL";
+}
+
 function addEnvVariablesToContent(currentContent: string, variables: EnvVariable[]): string {
   let envContent = currentContent || "";
   let contentToAdd = "";
@@ -123,14 +136,26 @@ function buildClientVars(
   const hasTanStackStart = frontend.includes("tanstack-start");
 
   const baseVar = getClientServerVar(frontend, backend);
-  const envVarName = backend === "convex" ? getConvexVar(frontend) : baseVar.key;
-  const serverUrl = backend === "convex" ? "https://<YOUR_CONVEX_URL>" : baseVar.value;
+
+  let envVarName: string;
+  let serverUrl: string;
+
+  if (backend === "pocketbase") {
+    envVarName = getPocketBaseVar(frontend);
+    serverUrl = "http://127.0.0.1:8090";
+  } else if (backend === "convex") {
+    envVarName = getConvexVar(frontend);
+    serverUrl = "https://<YOUR_CONVEX_URL>";
+  } else {
+    envVarName = baseVar.key;
+    serverUrl = baseVar.value;
+  }
 
   const vars: EnvVariable[] = [
     {
       key: envVarName,
       value: serverUrl,
-      condition: backend === "convex" ? true : baseVar.write,
+      condition: backend === "convex" || backend === "pocketbase" ? true : baseVar.write,
     },
   ];
 
