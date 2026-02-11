@@ -22,6 +22,11 @@ export async function processBackendTemplates(
     return;
   }
 
+  // PocketBase: No templates needed (handled by setup helper)
+  if (config.backend === "pocketbase") {
+    return;
+  }
+
   if (config.backend === "self") return;
 
   processTemplatesFromPrefix(vfs, templates, "backend/server/base", "apps/server", config);

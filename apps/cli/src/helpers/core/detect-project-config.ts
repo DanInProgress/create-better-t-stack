@@ -21,6 +21,7 @@ export async function detectProjectConfig(projectDir: string) {
           examples: btsConfig.examples,
           auth: btsConfig.auth,
           payments: btsConfig.payments,
+          pbDeployment: btsConfig.pbDeployment,
           packageManager: btsConfig.packageManager,
           dbSetup: btsConfig.dbSetup,
           api: btsConfig.api,

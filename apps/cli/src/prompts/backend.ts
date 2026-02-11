@@ -68,6 +68,12 @@ export async function getBackendFrameworkChoice(
   }
 
   backendOptions.push({
+    value: "pocketbase" as const,
+    label: "PocketBase",
+    hint: "Open source backend in 1 file (SQLite, Auth, Realtime)",
+  });
+
+  backendOptions.push({
     value: "none" as const,
     label: "None",
     hint: "No backend server",

@@ -10,6 +10,7 @@ import type {
   DatabaseSetup,
   ORM,
   PackageManager,
+  PBDeployment,
   Payments,
   ProjectConfig,
   Runtime,
@@ -60,6 +61,10 @@ export function processFlags(options: CLIInput, projectName?: string) {
 
   if (options.payments !== undefined) {
     config.payments = options.payments as Payments;
+  }
+
+  if (options.pbDeployment !== undefined) {
+    config.pbDeployment = options.pbDeployment as PBDeployment;
   }
 
   if (options.git !== undefined) {

@@ -9,6 +9,7 @@ import type {
   Frontend,
   ORM,
   PackageManager,
+  PBDeployment,
   Payments,
   ProjectConfig,
   Runtime,
@@ -33,6 +34,7 @@ import { navigableGroup } from "./navigable-group";
 import { getORMChoice } from "./orm";
 import { getPackageManagerChoice } from "./package-manager";
 import { getPaymentsChoice } from "./payments";
+import { getPBDeploymentChoice } from "./pb-deployment";
 import { getRuntimeChoice } from "./runtime";
 import { getServerDeploymentChoice } from "./server-deploy";
 import { getDeploymentChoice } from "./web-deploy";
@@ -46,6 +48,7 @@ type PromptGroupResults = {
   api: API;
   auth: Auth;
   payments: Payments;
+  pbDeployment: PBDeployment;
   addons: Addons[];
   examples: Examples[];
   dbSetup: DatabaseSetup;
@@ -74,6 +77,7 @@ export async function gatherConfig(
       orm: flags.orm ?? DEFAULT_CONFIG.orm,
       auth: flags.auth ?? DEFAULT_CONFIG.auth,
       payments: flags.payments ?? DEFAULT_CONFIG.payments,
+      pbDeployment: flags.pbDeployment ?? DEFAULT_CONFIG.pbDeployment,
       addons: flags.addons ?? [...DEFAULT_CONFIG.addons],
       examples: flags.examples ?? [...DEFAULT_CONFIG.examples],
       git: flags.git ?? DEFAULT_CONFIG.git,
@@ -106,6 +110,7 @@ export async function gatherConfig(
       auth: ({ results }) => getAuthChoice(flags.auth, results.backend, results.frontend),
       payments: ({ results }) =>
         getPaymentsChoice(flags.payments, results.auth, results.backend, results.frontend),
+      pbDeployment: ({ results }) => getPBDeploymentChoice(results.backend, flags.pbDeployment),
       addons: ({ results }) => getAddonsChoice(flags.addons, results.frontend, results.auth),
       examples: ({ results }) =>
         getExamplesChoice(
@@ -154,6 +159,7 @@ export async function gatherConfig(
     orm: result.orm,
     auth: result.auth,
     payments: result.payments,
+    pbDeployment: result.pbDeployment,
     addons: result.addons,
     examples: result.examples,
     git: result.git,
